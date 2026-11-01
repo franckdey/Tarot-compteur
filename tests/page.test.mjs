@@ -169,3 +169,15 @@ test('mise à jour Android : proposée, puis reportée au lendemain si « Plus t
   assert.deepEqual(erreurs, []);
   await fermer();
 });
+
+test('version de l’appli Android affichée sur l’accueil, absente sur le web', async () => {
+  const { page, erreurs, fermer } = await ouvrir();
+  assert.equal(await page.getByText(/^Version /).count(), 0);
+  const ctx = page.context();
+  await ctx.addInitScript(() => { window.CarnetAndroid = { version: () => '2.7', installer() {} }; });
+  await page.reload();
+  await page.getByText('Version 2.7').waitFor();
+  await pasDeDefilementHorizontal(page, 'avec la version affichée');
+  assert.deepEqual(erreurs, []);
+  await fermer();
+});
