@@ -42,6 +42,7 @@ cp android/out/carnet-tarot.apk apk/
 
 ## Vérifier un changement
 
+- `npm install` une fois, puis `npm test` : tous les tests de `tests/` (calcul, page dans Chromium, règles de code). Le workflow `.github/workflows/tests.yml` les lance sur chaque PR avec la fabrication de l'APK ; les jobs **Tests** et **APK** doivent passer pour fusionner dans `main`. Ajouter un test dans `tests/` pour chaque règle de marque ou comportement modifié.
 - Extraire le bloc de calcul et le tester avec Node sur quelques donnes types (3, 4 et 5 joueurs, somme nulle).
 - Ouvrir `web/index.html` dans Chromium (Playwright) à 400 px de large : pas de défilement horizontal, pas d'erreur dans la console, prénoms longs lisibles.
 - L'utilisateur joue sur des OnePlus Nord 2 et Nord 4 (Android).

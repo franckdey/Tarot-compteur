@@ -1,0 +1,60 @@
+name: Tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  tests:
+    # nom à cocher dans la protection de la branche main
+    name: Tests
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Installer Playwright et Chromium
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Calcul des scores, page web et règles de code
+        run: npm test
+
+  apk:
+    # nom à cocher dans la protection de la branche main
+    name: APK
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Outils Android
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q aapt apksigner zipalign dalvik-exchange android-sdk-platform-23 openjdk-17-jdk-headless
+
+      # La vraie clé n'est jamais dans le dépôt : on signe avec une clé jetable,
+      # uniquement pour vérifier que l'APK se fabrique.
+      - name: Fabriquer l'APK
+        run: |
+          keytool -genkeypair -keystore "$RUNNER_TEMP/ci.jks" -alias carnet -keyalg RSA -keysize 2048 \
+            -validity 1 -storepass ci-test -dname CN=CI -noprompt
+          KEYSTORE="$RUNNER_TEMP/ci.jks" KS_PASS=ci-test sh android/build.sh
+
+      - name: Contrôler l'APK
+        run: |
+          apk=android/out/carnet-tarot.apk
+          aapt dump badging "$apk" | grep -q "package: name='fr.maxime.carnettarot'"
+          unzip -l "$apk" | grep -q 'assets/index.html'
+          unzip -l "$apk" | grep -q 'assets/fonts/'
+          # la page embarquée ne doit plus appeler Google Fonts (appli hors ligne)
+          if unzip -p "$apk" assets/index.html | grep -q 'fonts.googleapis.com'; then
+            echo "::error::La page embarquée appelle encore Google Fonts"; exit 1
+          fi
+          apksigner verify "$apk"
