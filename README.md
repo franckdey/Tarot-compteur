@@ -20,11 +20,12 @@ Une petite appli pour tenir la marque d'une partie de tarot entre amis, jouée a
 
 ## Installer sur Android
 
-Téléchargez `carnet-tarot.apk` dans la page **Releases** du dépôt, ouvrez-le sur le téléphone et autorisez l'installation.
+Sur le téléphone, ouvrez le fichier [`apk/carnet-tarot.apk`](apk/carnet-tarot.apk) dans ce dépôt, touchez **Download raw** (ou l'icône de téléchargement), puis ouvrez le fichier téléchargé et autorisez l'installation. Une nouvelle version s'installe par-dessus l'ancienne sans perdre les scores.
 
 ## Contenu du dépôt
 
 | Dossier | Rôle |
 |---|---|
 | `web/` | L'appli en page web (un seul fichier `index.html`). Elle peut être servie par n'importe quel serveur web. |
+| `apk/` | L'APK prêt à installer. |
 | `android/` | L'enveloppe Android qui affiche la page web hors ligne, et `build.sh` pour fabriquer l'APK. |
