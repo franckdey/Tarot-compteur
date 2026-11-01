@@ -1,0 +1,14 @@
+{
+  "name": "carnet-tarot",
+  "private": true,
+  "description": "Tests du carnet de tarot (l'appli elle-même n'a aucune dépendance)",
+  "type": "module",
+  "scripts": {
+    "test": "node --test \"tests/*.test.mjs\"",
+    "test:calcul": "node --test tests/calcul.test.mjs",
+    "test:page": "node --test tests/page.test.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}

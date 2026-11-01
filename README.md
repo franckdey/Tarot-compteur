@@ -28,4 +28,5 @@ Sur le téléphone, ouvrez le fichier [`apk/carnet-tarot.apk`](apk/carnet-tarot.
 |---|---|
 | `web/` | L'appli en page web (un seul fichier `index.html`). Elle peut être servie par n'importe quel serveur web. |
 | `apk/` | L'APK prêt à installer. |
+| `tests/` | Tests automatiques (`npm install` puis `npm test`), lancés par GitHub sur chaque pull request. |
 | `android/` | L'enveloppe Android qui affiche la page web hors ligne, et `build.sh` pour fabriquer l'APK. |
