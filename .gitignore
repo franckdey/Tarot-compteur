@@ -1,0 +1,5 @@
+android/out/
+android/gen/
+android/classes/
+android/assets/
+*.jks

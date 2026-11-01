@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#173a33">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<style>[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}</style>
+<title>Carnet de tarot</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@500;700&family=Alegreya+Sans:wght@400;500;700&display=swap">
+<style>
+/* Mise en page : une colonne façon carnet de marque posé sur le tapis vert. Totaux en haut, feuille des donnes dessous, saisie d'une donne en feuille plein écran. Même univers que « Tarot en famille » : feutre vert et laiton. */
+:root{
+  --felt:#173a33; --felt-2:#1f4a41; --felt-3:#0f2a25;
+  --ink:#f2eee3; --muted:#a8c2b8; --line:rgba(242,238,227,.14); --line-2:rgba(242,238,227,.26);
+  --brass:#d9ad4f; --brass-ink:#2a1d05; --brass-soft:rgba(217,173,79,.16);
+  --good:#7fd19a; --bad:#f08a7e;
+  --sheet:#132f29;
+  --display:"Alegreya SC", Georgia, "Times New Roman", serif;
+  --body:"Alegreya Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color-scheme:dark;
+}
+html,body{min-height:100%}
+html{background:var(--felt-3)}
+body{background:radial-gradient(120% 80% at 50% 0%, var(--felt-2), var(--felt) 55%, var(--felt-3));background-color:var(--felt);background-attachment:fixed;color:var(--ink);font:16px/1.4 var(--body);-webkit-tap-highlight-color:transparent}
+.wrap{max-width:620px;margin:0 auto;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:12px 110px;display:flex;flex-direction:column;gap:14px;box-sizing:border-box}
+h1{font:700 24px/1 var(--display);letter-spacing:.02em;margin:0}
+h2{font:700 18px/1.2 var(--display);margin:0;letter-spacing:.02em}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.muted{color:var(--muted)} .small{font-size:14px}
+.num{font-variant-numeric:tabular-nums}
+.pos{color:var(--good)} .neg{color:var(--bad)}
+button{font:600 16px var(--body);border-radius:12px;border:1px solid var(--line-2);background:rgba(255,255,255,.06);color:var(--ink);padding:11px 14px;cursor:pointer;touch-action:manipulation}
+button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+button.primary{background:var(--brass);color:var(--brass-ink);border-color:var(--brass)}
+button.danger{color:var(--bad);border-color:rgba(240,138,126,.45)}
+button.ghost{background:none;border-color:transparent;color:var(--muted);padding:8px 6px;font-weight:500;font-size:15px}
+button:disabled{opacity:.4;cursor:default}
+input[type=text],input[type=number]{font:18px var(--body);padding:11px 12px;border-radius:12px;border:1px solid var(--line-2);background:rgba(0,0,0,.22);color:var(--ink);width:100%;box-sizing:border-box}
+.panel{border:1px solid var(--line);border-radius:16px;padding:14px;background:rgba(0,0,0,.16);display:flex;flex-direction:column;gap:12px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.lbl{font:600 13px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+
+/* Totaux */
+.totals{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:8px}
+.tot{border:1px solid var(--line);border-radius:14px;padding:10px 6px 9px;text-align:center;background:rgba(0,0,0,.18);display:flex;flex-direction:column;gap:2px;min-width:0}
+.tot .nm{font:500 14px/1.2 var(--body);white-space:nowrap;overflow:hidden}
+.tot .pt{font:700 26px/1.1 var(--display);font-variant-numeric:tabular-nums}
+.tot .rk{font-size:12px;color:var(--muted)}
+.tot.lead{border-color:var(--brass);background:var(--brass-soft)}
+.next{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+
+/* Feuille des donnes */
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:14px;border:1px solid var(--line)}
+table{border-collapse:collapse;width:100%;table-layout:fixed;font-variant-numeric:tabular-nums}
+th,td{padding:4px 4px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+th{font:600 13px var(--body);color:var(--muted);padding-block:9px;border-bottom:1px solid var(--line);background:rgba(0,0,0,.2)}
+tbody.dn{cursor:pointer;border-bottom:1px solid var(--line)}
+tbody.dn:last-child{border-bottom:none}
+tbody.dn:hover,tbody.dn:focus-visible{background:rgba(255,255,255,.04);outline:none}
+td.desc{text-align:left;padding:9px 10px 2px;font-size:13px;color:var(--muted);line-height:1.3;white-space:normal}
+td.desc b{color:var(--ink);font-weight:600;font-size:14px}
+td .taker{color:var(--brass);font-weight:700}
+tr.sc td{padding-bottom:9px;font-weight:600}
+td .cum{display:block;font-size:12px;color:var(--muted);font-weight:400}
+input[type=number]{-moz-appearance:textfield;appearance:textfield}
+input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.empty{padding:22px 14px;text-align:center;color:var(--muted)}
+
+/* Bouton flottant */
+.fab{position:fixed;left:0;right:0;bottom:0;padding:12px max(16px, env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));background:linear-gradient(to top,var(--felt-3) 60%,rgba(15,42,37,0));display:flex;justify-content:center;z-index:5}
+.fab button{width:100%;max-width:588px;font-size:18px;padding:15px}
+
+/* Choix (pastilles) */
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{flex:1 1 auto;padding:10px 10px;min-width:56px;font-weight:500}
+.seg button[aria-pressed="true"]{background:var(--brass);color:var(--brass-ink);border-color:var(--brass);font-weight:700}
+.seg button small{display:block;font-size:12px;font-weight:500;opacity:.8}
+.field{display:flex;flex-direction:column;gap:7px}
+.field .hint{font-size:13px;color:var(--muted)}
+
+/* Feuille de saisie */
+.sheet{position:fixed;inset:0;z-index:20;background:var(--sheet);overflow-y:auto;-webkit-overflow-scrolling:touch}
+.sheet .inner{max-width:620px;margin:0 auto;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:calc(10px + env(safe-area-inset-top, 0px)) calc(150px + env(safe-area-inset-bottom, 0px));display:flex;flex-direction:column;gap:18px;box-sizing:border-box}
+.sheet header{position:sticky;top:0;background:var(--sheet);padding-block:6px;z-index:2}
+.pts{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center}
+.pts button{width:52px;height:52px;padding:0;font-size:22px}
+.pts input{text-align:center;font:700 28px var(--display);font-variant-numeric:tabular-nums;height:52px}
+.verdict{font:700 18px var(--display)}
+details{border-top:1px solid var(--line);padding-top:12px}
+summary{cursor:pointer;font:600 16px var(--body);list-style:none;display:flex;justify-content:space-between;gap:8px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";color:var(--brass);font-size:20px;line-height:1}
+details[open] summary::after{content:"−"}
+details>.inner2{display:flex;flex-direction:column;gap:16px;padding-top:14px}
+.preview{position:fixed;left:0;right:0;bottom:0;z-index:21;background:var(--felt-3);border-top:1px solid var(--line-2);padding:10px max(16px, env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px))}
+.preview .in{max-width:588px;margin:0 auto;display:flex;flex-direction:column;gap:9px}
+.pv{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:4px;text-align:center}
+.pv div{min-width:0}
+.pv .nm{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden}
+th .nm{display:block;overflow:hidden;white-space:nowrap}
+.pv .v{font:700 18px var(--display);font-variant-numeric:tabular-nums}
+.preview .row button{flex:1}
+
+/* Fenêtre de confirmation */
+.modal{position:fixed;inset:0;z-index:40;background:rgba(5,15,12,.7);display:flex;align-items:center;justify-content:center;padding:20px}
+.modal .box{background:var(--sheet);border:1px solid var(--line-2);border-radius:16px;padding:18px;max-width:380px;width:100%;display:flex;flex-direction:column;gap:14px}
+.modal .row button{flex:1}
+
+/* Mise en place */
+.roster{display:flex;flex-wrap:wrap;gap:8px}
+.pj{padding:9px 14px;border-radius:999px;font-weight:500;display:inline-flex;align-items:center;gap:7px}
+.pj[aria-pressed="true"]{background:var(--brass);color:var(--brass-ink);border-color:var(--brass);font-weight:700}
+.pj .pos-n{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--brass-ink);color:var(--brass);font-size:12px}
+.pj.del{border-color:rgba(240,138,126,.45)}
+.pj.del span{color:var(--bad)}
+.addp{display:grid;grid-template-columns:1fr auto;gap:8px}
+.names{display:flex;flex-direction:column;gap:8px}
+.names .r{display:grid;grid-template-columns:26px 1fr;align-items:center;gap:8px}
+.names .r span{font:700 16px var(--display);color:var(--muted);text-align:center}
+.hist{display:flex;flex-direction:column;gap:8px}
+.mois .mnom{font:700 17px var(--display);text-transform:capitalize}
+.mois .cumul{line-height:1.6;padding:8px 12px;border-radius:12px;background:var(--brass-soft)}
+.hist .it{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:4px}
+.hist .top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.hist .res{font-size:14px;line-height:1.5}
+.rules{font-size:14px;color:var(--muted);line-height:1.5}
+.rules table{font-size:13px;margin-top:6px}
+.rules th,.rules td{padding:5px 6px;text-align:left;position:static;background:none}
+.toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom, 0px));transform:translateX(-50%);background:var(--ink);color:var(--felt-3);padding:9px 16px;border-radius:999px;font-weight:600;z-index:50;box-shadow:0 4px 18px rgba(0,0,0,.4)}
+@media (max-width:380px){.tot .pt{font-size:22px}.wrap{gap:12px}}
+@media (prefers-reduced-motion:no-preference){.sheet{animation:up .18s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}}}
+</style>
+
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div id="layer"></div>
+
+<script>
+'use strict';
+// ===== CALCUL (règles FFT) =====
+const CONTRATS = {
+  petite:  { nom: 'Petite',       court: 'P',  k: 1 },
+  garde:   { nom: 'Garde',        court: 'G',  k: 2 },
+  gsans:   { nom: 'Garde sans',   court: 'GS', k: 4 },
+  gcontre: { nom: 'Garde contre', court: 'GC', k: 6 },
+};
+const SEUIL = [56, 51, 41, 36];
+const POIGNEE = { 0: 0, 1: 20, 2: 30, 3: 40 };
+const POIGNEE_NOM = { 0: 'Aucune', 1: 'Simple', 2: 'Double', 3: 'Triple' };
+const ATOUTS_POIGNEE = { 3: [13, 15, 18], 4: [10, 13, 15], 5: [8, 10, 13] };
+const CHELEM = {
+  aucun:     { nom: 'Aucun', v: 0 },
+  annonceOk: { nom: 'Annoncé et réussi', v: 400 },
+  annonceKo: { nom: 'Annoncé et chuté', v: -200 },
+  nonAnnonce:{ nom: 'Non annoncé, réussi', v: 200 },
+  defense:   { nom: 'Réalisé par la défense', v: -200 },
+};
+
+// Une donne : { preneur, appele (5 joueurs), contrat, bouts, points (de l'attaque),
+//               petit: 'non'|'att'|'def', poigneeAtt, poigneeDef, chelem }
+function calculerDonne(d, n) {
+  const k = CONTRATS[d.contrat].k;
+  const seuil = SEUIL[d.bouts];
+  const ecart = d.points - seuil;
+  const gagne = ecart >= 0;
+  const s = gagne ? 1 : -1;
+  const ecartArrondi = Math.ceil(Math.abs(ecart)); // un demi-point compte pour un point
+  const base = (25 + ecartArrondi) * k;
+  const petit = d.petit === 'att' ? 10 * k : d.petit === 'def' ? -10 * k : 0;
+  const poignee = s * (POIGNEE[d.poigneeAtt || 0] + POIGNEE[d.poigneeDef || 0]);
+  const chelem = CHELEM[d.chelem || 'aucun'].v;
+  const T = s * base + petit + poignee + chelem; // ce que gagne l'attaque contre chaque défenseur
+  const scores = new Array(n).fill(-T);
+  if (n === 5 && d.appele != null && d.appele !== d.preneur) {
+    scores[d.preneur] = 2 * T;
+    scores[d.appele] = T;
+  } else {
+    scores[d.preneur] = (n - 1) * T;
+  }
+  return { scores: scores.map(v => v + 0), gagne, seuil, ecart, ecartArrondi, T, k, base, petit, poignee, chelem };
+}
+// ===== FIN CALCUL =====
+
+const KEY = 'tarotCompteur.v1';
+const store = {
+  load() { try { return JSON.parse(localStorage.getItem(KEY)) || null; } catch (_) { return null; } },
+  save(v) { try { localStorage.setItem(KEY, JSON.stringify(v)); return true; } catch (_) { return false; } },
+};
+let S = store.load() || { partie: null, archives: [], derniersNoms: [] };
+if (!Array.isArray(S.archives)) S.archives = [];
+const save = () => { if (!store.save(S)) toast('Impossible d’enregistrer sur ce téléphone'); };
+
+const $ = (sel, root = document) => root.querySelector(sel);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmt = v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v);
+const cls = v => v > 0 ? 'pos' : v < 0 ? 'neg' : '';
+const app = $('#app'), layer = $('#layer');
+
+function totaux(p) {
+  const t = new Array(p.joueurs.length).fill(0);
+  for (const d of p.donnes) calculerDonne(d, p.joueurs.length).scores.forEach((v, i) => t[i] += v);
+  return t;
+}
+function rangs(t) {
+  return t.map(v => 1 + t.filter(x => x > v).length);
+}
+function resumeDonne(d, p) {
+  const r = calculerDonne(d, p.joueurs.length);
+  const c = CONTRATS[d.contrat];
+  let txt = `<b>${c.nom}</b> de <span class="taker">${esc(p.joueurs[d.preneur])}</span>`;
+  if (p.joueurs.length === 5 && d.appele != null) txt += d.appele === d.preneur ? ' seul' : ` avec ${esc(p.joueurs[d.appele])}`;
+  txt += `<br>${r.gagne ? 'Faite' : 'Chutée'} de ${r.ecartArrondi} · ${d.bouts} bout${d.bouts > 1 ? 's' : ''}`;
+  const extras = [];
+  if (d.petit === 'att') extras.push('petit au bout');
+  if (d.petit === 'def') extras.push('petit au bout (déf.)');
+  if (d.poigneeAtt || d.poigneeDef) extras.push('poignée');
+  if (d.chelem && d.chelem !== 'aucun') extras.push('chelem');
+  if (extras.length) txt += ' · ' + extras.join(', ');
+  return txt;
+}
+
+// ===== ÉCRANS =====
+function render() {
+  if (!S.partie) return renderAccueil();
+  renderPartie();
+}
+
+function nomsConnus() {
+  if (!Array.isArray(S.habitues)) {
+    const vus = [];
+    const add = j => { if (j && !/^Joueur \d$/.test(j) && !vus.some(v => v.toLowerCase() === j.toLowerCase())) vus.push(j); };
+    (S.derniersNoms || []).forEach(add);
+    S.archives.forEach(a => a.joueurs.forEach(add));
+    S.habitues = vus;
+  }
+  return S.habitues;
+}
+
+function renderAccueil() {
+  const liste = nomsConnus();
+  let choisis = (S.derniersNoms || []).filter(j => liste.includes(j)).slice(0, 5);
+  let edition = false;
+  const draw = () => {
+    const nb = choisis.length;
+    const pret = nb >= 3 && nb <= 5;
+    app.innerHTML = `
+      <header><h1>Carnet de tarot</h1></header>
+      <section class="panel">
+        <div class="row" style="justify-content:space-between"><h2>Nouvelle partie</h2>
+          ${liste.length ? `<button type="button" class="ghost" id="edit">${edition ? 'Terminé' : 'Modifier la liste'}</button>` : ''}</div>
+        <div class="field">
+          <span class="lbl">${edition ? 'Touchez ✕ pour retirer un joueur de la liste' : 'Touchez les joueurs présents, de 3 à 5'}</span>
+          ${liste.length ? `<div class="roster">${liste.map((j, i) => {
+            const pos = choisis.indexOf(j);
+            return edition
+              ? `<button type="button" class="pj del" data-del="${i}">${esc(j)} <span aria-hidden="true">✕</span></button>`
+              : `<button type="button" class="pj" data-pick="${i}" aria-pressed="${pos >= 0}">${pos >= 0 ? `<span class="pos-n">${pos + 1}</span>` : ''}${esc(j)}</button>`;
+          }).join('')}</div>` : `<span class="hint">Ajoutez d’abord les prénoms de vos joueurs habituels. Ils resteront enregistrés pour les prochaines parties.</span>`}
+          <form class="addp" id="addForm"><input type="text" id="nouveau" autocomplete="off" maxlength="14" placeholder="Nouveau joueur"><button type="submit">Ajouter</button></form>
+        </div>
+        ${!edition && nb ? `<div class="field"><span class="lbl">Joueurs de la partie</span>
+          <div class="small">${choisis.map((j, i) => `${i + 1}. ${esc(j)}`).join(' · ')}</div>
+          <span class="hint">L’ordre de sélection fixe l’ordre des colonnes.</span></div>` : ''}
+        ${edition ? '' : `<button type="button" class="primary" id="go" ${pret ? '' : 'disabled'}>${pret ? `Commencer à ${nb} joueurs` : nb > 5 ? 'Pas plus de 5 joueurs' : `Choisissez encore ${3 - nb} joueur${3 - nb > 1 ? 's' : ''}`}</button>`}
+      </section>
+      ${renderArchives()}
+      ${renderRegles()}
+    `;
+    const e = $('#edit'); if (e) e.onclick = () => { edition = !edition; draw(); };
+    app.querySelectorAll('[data-pick]').forEach(b => b.onclick = () => {
+      const j = liste[+b.dataset.pick];
+      if (choisis.includes(j)) choisis = choisis.filter(x => x !== j);
+      else if (choisis.length < 5) choisis.push(j);
+      else { toast('5 joueurs au maximum'); return; }
+      draw();
+    });
+    app.querySelectorAll('[data-del]').forEach(b => b.onclick = () => {
+      const j = liste[+b.dataset.del];
+      liste.splice(+b.dataset.del, 1); choisis = choisis.filter(x => x !== j); save();
+      if (!liste.length) edition = false;
+      draw();
+    });
+    $('#addForm').onsubmit = ev => {
+      ev.preventDefault();
+      const j = $('#nouveau').value.trim().replace(/\s+/g, ' ');
+      if (!j) return;
+      const exist = liste.find(x => x.toLowerCase() === j.toLowerCase());
+      if (!exist) { liste.push(j); save(); }
+      const nom = exist || j;
+      if (!edition && !choisis.includes(nom) && choisis.length < 5) choisis.push(nom);
+      draw(); $('#nouveau').focus();
+    };
+    const go = $('#go'); if (go) go.onclick = () => {
+      const joueurs = choisis.slice();
+      S.partie = { id: Date.now().toString(36), debut: Date.now(), joueurs, premierDonneur: 0, donnes: [] };
+      S.derniersNoms = joueurs.slice();
+      save(); keepAwake(); render(); window.scrollTo(0, 0);
+    };
+    bindArchives();
+  };
+  draw();
+}
+
+function renderPartie() {
+  const p = S.partie, n = p.joueurs.length, t = totaux(p), rk = rangs(t);
+  const max = Math.max(...t);
+  let cumul = new Array(n).fill(0);
+  const lignes = p.donnes.map((d, idx) => {
+    const r = calculerDonne(d, n);
+    cumul = cumul.map((v, i) => v + r.scores[i]);
+    return `<tbody class="dn" tabindex="0" data-i="${idx}">
+      <tr><td class="desc" colspan="${n}"><span class="muted">${idx + 1}.</span> ${resumeDonne(d, p)}</td></tr>
+      <tr class="sc">${r.scores.map((v, i) => `<td><span class="${cls(v)}">${fmt(v)}</span><span class="cum">${cumul[i]}</span></td>`).join('')}</tr>
+    </tbody>`;
+  }).reverse().join('');
+  app.innerHTML = `
+    <header>
+      <h1>Carnet de tarot</h1>
+      <button type="button" class="ghost" id="menu">Partie ▾</button>
+    </header>
+    <div class="totals" style="--n:${n}">
+      ${p.joueurs.map((j, i) => `<div class="tot ${p.donnes.length && t[i] === max ? 'lead' : ''}">
+        <span class="nm">${esc(j)}</span>
+        <span class="pt ${cls(t[i])}">${t[i]}</span>
+        <span class="rk">${p.donnes.length ? (rk[i] === 1 ? '1er' : rk[i] + 'e') : '&nbsp;'}</span>
+      </div>`).join('')}
+    </div>
+    <div class="next small">
+      <span class="muted">Donne ${p.donnes.length + 1}</span>
+      ${p.donnes.length ? `<button type="button" class="ghost" id="undo">Annuler la dernière donne</button>` : ''}
+    </div>
+    <section>
+      <div class="scroll">
+        ${p.donnes.length ? `<table>
+          <thead><tr>${p.joueurs.map(j => `<th><span class="nm">${esc(j)}</span></th>`).join('')}</tr></thead>
+          ${lignes}
+        </table>` : `<div class="empty">Aucune donne pour l’instant.<br>Après chaque donne, touchez <b>Ajouter une donne</b>, choisissez le preneur, le contrat, les bouts et les points de l’attaque.</div>`}
+      </div>
+      ${p.donnes.length ? `<p class="small muted" style="margin:8px 2px 0">Touchez une ligne pour la corriger. Sous chaque score, le total cumulé.</p>` : ''}
+    </section>
+    ${renderRegles()}
+    <div class="fab"><button type="button" class="primary" id="add">Ajouter une donne</button></div>
+  `;
+  $('#add').onclick = () => ouvrirSaisie(null);
+  $('#menu').onclick = menuPartie;
+  const u = $('#undo'); if (u) u.onclick = () => confirmer('Annuler la dernière donne ?', 'Ses points seront retirés des totaux.', 'Annuler la donne', () => { p.donnes.pop(); save(); render(); toast('Donne annulée'); });
+  app.querySelectorAll('tbody.dn').forEach(tr => {
+    const open = () => ouvrirSaisie(+tr.dataset.i);
+    tr.onclick = open; tr.onkeydown = e => { if (e.key === 'Enter') open(); };
+  });
+}
+
+function menuPartie() {
+  const p = S.partie;
+  layer.innerHTML = `<div class="modal" id="m"><div class="box">
+    <h2>Partie en cours</h2>
+    <p class="small muted" style="margin:0">${p.joueurs.map(esc).join(', ')} · ${p.donnes.length} donne${p.donnes.length > 1 ? 's' : ''}</p>
+    <button type="button" class="primary" id="fin">Terminer et archiver la partie</button>
+    <button type="button" class="danger" id="jeter">Effacer la partie sans l’archiver</button>
+    <button type="button" id="close">Fermer</button>
+  </div></div>`;
+  const close = () => layer.innerHTML = '';
+  $('#m').onclick = e => { if (e.target.id === 'm') close(); };
+  $('#close').onclick = close;
+  $('#fin').onclick = () => {
+    if (p.donnes.length) S.archives.unshift({ ...p, fin: Date.now() });
+    S.archives = S.archives.slice(0, 50);
+    S.partie = null; save(); close(); render(); toast(p.donnes.length ? 'Partie archivée' : 'Partie terminée');
+  };
+  $('#jeter').onclick = () => confirmer('Effacer la partie ?', 'Toutes les donnes de cette partie seront perdues.', 'Effacer', () => { S.partie = null; save(); render(); });
+}
+
+function renderArchives() {
+  if (!S.archives.length) return '';
+  // Regroupe les parties par mois, du plus récent au plus ancien.
+  const mois = [];
+  S.archives.forEach((a, ai) => {
+    const d = new Date(a.debut), cle = d.getFullYear() * 12 + d.getMonth();
+    let m = mois.find(x => x.cle === cle);
+    if (!m) { m = { cle, nom: d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }), parties: [] }; mois.push(m); }
+    m.parties.push([a, ai]);
+  });
+  mois.sort((x, y) => y.cle - x.cle);
+  mois.forEach(m => m.parties.sort((x, y) => y[0].debut - x[0].debut));
+  return `<section class="panel"><h2>Parties précédentes</h2>${mois.map((m, mi) => {
+    const cumul = {};
+    m.parties.forEach(([a]) => totaux(a).forEach((v, i) => { const j = a.joueurs[i]; cumul[j] = (cumul[j] || 0) + v; }));
+    const cl = Object.entries(cumul).sort((x, y) => y[1] - x[1]);
+    return `<details class="mois" ${mi === 0 ? 'open' : ''}>
+      <summary><span><span class="mnom">${esc(m.nom)}</span> <span class="small muted">· ${m.parties.length} partie${m.parties.length > 1 ? 's' : ''}</span></span></summary>
+      <div class="inner2">
+        <div class="cumul small num"><span class="lbl">Total du mois</span><br>${cl.map(([j, v], k) => `${k === 0 ? '<b>' : ''}${esc(j)} <span class="${cls(v)}">${v}</span>${k === 0 ? '</b>' : ''}`).join(' · ')}</div>
+        <div class="hist">${m.parties.map(([a, ai]) => {
+          const t = totaux(a);
+          const ordre = a.joueurs.map((j, i) => [j, t[i]]).sort((x, y) => y[1] - x[1]);
+          const date = new Date(a.debut).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric' });
+          return `<div class="it">
+            <div class="top"><b>${esc(date)}</b><span class="small muted">${a.donnes.length} donne${a.donnes.length > 1 ? 's' : ''}</span></div>
+            <div class="res num">${ordre.map(([j, v], k) => `${k === 0 ? '<b>' : ''}${esc(j)} <span class="${cls(v)}">${v}</span>${k === 0 ? '</b>' : ''}`).join(' · ')}</div>
+            <div class="row"><button type="button" class="ghost" data-reprendre="${ai}">Reprendre</button><button type="button" class="ghost" data-suppr="${ai}">Supprimer</button></div>
+          </div>`;
+        }).join('')}</div>
+      </div>
+    </details>`;
+  }).join('')}</section>`;
+}
+function bindArchives() {
+  app.querySelectorAll('[data-suppr]').forEach(b => b.onclick = () => confirmer('Supprimer cette partie ?', 'Elle disparaîtra de l’historique.', 'Supprimer', () => { S.archives.splice(+b.dataset.suppr, 1); save(); render(); }));
+  app.querySelectorAll('[data-reprendre]').forEach(b => b.onclick = () => {
+    const a = S.archives.splice(+b.dataset.reprendre, 1)[0]; delete a.fin; S.partie = a; save(); render(); window.scrollTo(0, 0);
+  });
+}
+
+function renderRegles() {
+  return `<details class="panel rules"><summary>Rappel des règles de marque</summary><div class="inner2">
+    <div>Contrat réussi si l’attaque atteint le nombre de points demandé selon ses bouts :
+      <table><tr><th>Bouts</th><td>0</td><td>1</td><td>2</td><td>3</td></tr><tr><th>Points</th><td>56</td><td>51</td><td>41</td><td>36</td></tr></table></div>
+    <div>Marque = (25 + écart) × coefficient du contrat : Petite ×1, Garde ×2, Garde sans ×4, Garde contre ×6. Un demi-point d’écart compte pour un point.</div>
+    <div>Petit au bout : 10 × coefficient, au camp qui l’a mené au dernier pli. Poignée : 20, 30 ou 40, sans coefficient, au camp qui gagne la donne. Chelem : +400 annoncé et réussi, −200 annoncé et chuté, +200 non annoncé.</div>
+    <div>Répartition : à 3 joueurs le preneur marque 2 fois, à 4 joueurs 3 fois, à 5 joueurs 2 fois et son partenaire 1 fois (4 fois s’il s’appelle seul). Chaque défenseur paie une part, et la somme fait toujours zéro.</div>
+  </div></details>`;
+}
+
+// ===== SAISIE D'UNE DONNE =====
+function ouvrirSaisie(index) {
+  const p = S.partie, n = p.joueurs.length;
+  const existante = index != null ? p.donnes[index] : null;
+  const d = existante ? { ...existante } : { preneur: null, appele: null, contrat: 'garde', bouts: null, points: null, petit: 'non', poigneeAtt: 0, poigneeDef: 0, chelem: 'aucun' };
+  let saisieDefense = false;
+  const extrasOuverts = !!(existante && (existante.petit !== 'non' || existante.poigneeAtt || existante.poigneeDef || existante.chelem !== 'aucun'));
+  const seg = (id, options, val) => `<div class="seg" id="${id}">${options.map(([v, label, sub]) => `<button type="button" data-v="${v}" aria-pressed="${String(v) === String(val)}">${label}${sub ? `<small>${sub}</small>` : ''}</button>`).join('')}</div>`;
+  const atouts = ATOUTS_POIGNEE[n];
+
+  layer.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="Saisir une donne"><div class="inner">
+    <header><h2>${existante ? `Corriger la donne ${index + 1}` : `Donne ${p.donnes.length + 1}`}</h2><button type="button" class="ghost" id="x">Fermer</button></header>
+    <div class="field"><span class="lbl">Preneur</span>${seg('preneur', p.joueurs.map((j, i) => [i, esc(j)]), d.preneur)}</div>
+    ${n === 5 ? `<div class="field"><span class="lbl">Partenaire appelé</span><div id="appeleBox"></div><span class="hint">Choisissez le preneur lui-même s’il s’est appelé seul.</span></div>` : ''}
+    <div class="field"><span class="lbl">Contrat</span>${seg('contrat', Object.entries(CONTRATS).map(([k, c]) => [k, c.nom, '×' + c.k]), d.contrat)}</div>
+    <div class="field"><span class="lbl">Bouts de l’attaque</span>${seg('bouts', [0, 1, 2, 3].map(b => [b, b, SEUIL[b] + ' pts']), d.bouts)}</div>
+    <div class="field">
+      <div class="row" style="justify-content:space-between"><span class="lbl" id="ptsLbl">Points de l’attaque</span><button type="button" class="ghost" id="swap">Saisir ceux de la défense</button></div>
+      <div class="pts"><button type="button" id="moins" aria-label="Retirer un point">−</button>
+        <input type="number" id="pts" inputmode="decimal" min="0" max="91" step="0.5" placeholder="0 à 91">
+        <button type="button" id="plus" aria-label="Ajouter un point">+</button></div>
+      <span class="verdict" id="verdict">&nbsp;</span>
+    </div>
+    <details id="extras" ${extrasOuverts ? 'open' : ''}><summary>Petit au bout, poignée, chelem</summary><div class="inner2">
+      <div class="field"><span class="lbl">Petit au bout</span>${seg('petit', [['non', 'Non'], ['att', 'Attaque'], ['def', 'Défense']], d.petit)}</div>
+      <div class="field"><span class="lbl">Poignée montrée par l’attaque</span>${seg('poigneeAtt', [0, 1, 2, 3].map(v => [v, POIGNEE_NOM[v], v ? `${atouts[v - 1]} atouts` : '']), d.poigneeAtt)}</div>
+      <div class="field"><span class="lbl">Poignée montrée par la défense</span>${seg('poigneeDef', [0, 1, 2, 3].map(v => [v, POIGNEE_NOM[v], v ? `${atouts[v - 1]} atouts` : '']), d.poigneeDef)}<span class="hint">La poignée va toujours au camp qui gagne la donne.</span></div>
+      <div class="field"><span class="lbl">Chelem</span>${seg('chelem', Object.entries(CHELEM).map(([k, c]) => [k, c.nom]), d.chelem)}</div>
+    </div></details>
+    ${existante ? `<button type="button" class="danger" id="suppr">Supprimer cette donne</button>` : ''}
+  </div></div>
+  <div class="preview"><div class="in">
+    <div class="pv" id="pv" style="--n:${n}"></div>
+    <div class="row"><button type="button" class="primary" id="ok">${existante ? 'Enregistrer la correction' : 'Enregistrer la donne'}</button></div>
+  </div></div>`;
+  document.body.style.overflow = 'hidden';
+  const close = () => { layer.innerHTML = ''; document.body.style.overflow = ''; };
+  const ptsEl = $('#pts');
+  if (d.points != null) ptsEl.value = d.points;
+
+  function bindSeg(id, key, parse = v => v) {
+    const box = $('#' + id); if (!box) return;
+    box.querySelectorAll('button').forEach(b => b.onclick = () => {
+      d[key] = parse(b.dataset.v);
+      box.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
+      if (key === 'preneur') drawAppele();
+      update();
+    });
+  }
+  function drawAppele() {
+    const box = $('#appeleBox'); if (!box) return;
+    box.innerHTML = seg('appele', p.joueurs.map((j, i) => [i, esc(j), i === d.preneur ? 'seul' : '']), d.appele);
+    bindSeg('appele', 'appele', Number);
+  }
+  bindSeg('preneur', 'preneur', Number); drawAppele();
+  bindSeg('contrat', 'contrat'); bindSeg('bouts', 'bouts', Number);
+  bindSeg('petit', 'petit'); bindSeg('poigneeAtt', 'poigneeAtt', Number); bindSeg('poigneeDef', 'poigneeDef', Number); bindSeg('chelem', 'chelem');
+
+  function lirePoints() {
+    const raw = ptsEl.value.replace(',', '.').trim();
+    if (raw === '') return null;
+    const v = Math.round(parseFloat(raw) * 2) / 2;
+    if (!isFinite(v) || v < 0 || v > 91) return NaN;
+    return saisieDefense ? 91 - v : v;
+  }
+  function update() {
+    d.points = lirePoints();
+    const manque = [];
+    if (d.preneur == null) manque.push('le preneur');
+    if (n === 5 && d.appele == null) manque.push('le partenaire');
+    if (d.bouts == null) manque.push('les bouts');
+    if (d.points == null) manque.push('les points');
+    const v = $('#verdict'), pv = $('#pv'), ok = $('#ok');
+    if (Number.isNaN(d.points)) { v.innerHTML = '<span class="neg">Les points vont de 0 à 91.</span>'; ok.disabled = true; pv.innerHTML = ''; return; }
+    if (d.bouts != null && d.points != null) {
+      const r = calculerDonne({ ...d, preneur: d.preneur ?? 0 }, n);
+      const att = d.points;
+      v.innerHTML = `<span class="${r.gagne ? 'pos' : 'neg'}">${r.gagne ? 'Faite' : 'Chutée'} de ${r.ecartArrondi}</span> <span class="small muted" style="font:400 14px var(--body)">· attaque ${att}, défense ${91 - att}, il fallait ${r.seuil}</span>`;
+    } else v.innerHTML = '&nbsp;';
+    if (manque.length) {
+      pv.innerHTML = `<div style="grid-column:1/-1" class="small muted">Il manque ${manque.join(', ')}.</div>`;
+      ok.disabled = true; return;
+    }
+    const r = calculerDonne(d, n);
+    pv.innerHTML = p.joueurs.map((j, i) => `<div><div class="nm">${esc(j)}</div><div class="v ${cls(r.scores[i])}">${fmt(r.scores[i])}</div></div>`).join('');
+    ok.disabled = false;
+  }
+  ptsEl.oninput = update;
+  const step = delta => {
+    const cur = parseFloat(ptsEl.value.replace(',', '.'));
+    let nv = (isFinite(cur) ? cur : (saisieDefense ? 50 : 41)) + delta;
+    nv = Math.min(91, Math.max(0, nv)); ptsEl.value = nv; update();
+  };
+  $('#moins').onclick = () => step(-1); $('#plus').onclick = () => step(1);
+  $('#swap').onclick = () => {
+    const cur = lirePoints();
+    saisieDefense = !saisieDefense;
+    $('#ptsLbl').textContent = saisieDefense ? 'Points de la défense' : 'Points de l’attaque';
+    $('#swap').textContent = saisieDefense ? 'Saisir ceux de l’attaque' : 'Saisir ceux de la défense';
+    if (cur != null && !Number.isNaN(cur)) ptsEl.value = saisieDefense ? 91 - cur : cur;
+    update();
+  };
+  $('#x').onclick = close;
+  $('#ok').onclick = () => {
+    if (n !== 5) d.appele = null;
+    if (existante) p.donnes[index] = d; else p.donnes.push(d);
+    save(); close(); render(); toast(existante ? 'Donne corrigée' : 'Donne enregistrée');
+  };
+  const sup = $('#suppr');
+  if (sup) sup.onclick = () => confirmer(`Supprimer la donne ${index + 1} ?`, 'Ses points seront retirés des totaux.', 'Supprimer', () => { p.donnes.splice(index, 1); save(); close(); render(); toast('Donne supprimée'); });
+  update();
+}
+
+// ===== OUTILS =====
+function confirmer(titre, texte, action, onYes) {
+  const box = document.createElement('div');
+  box.className = 'modal';
+  box.innerHTML = `<div class="box" role="alertdialog" aria-modal="true"><h2>${esc(titre)}</h2><p class="small muted" style="margin:0">${esc(texte)}</p>
+    <div class="row"><button type="button" id="cNo">Garder</button><button type="button" class="danger" id="cYes">${esc(action)}</button></div></div>`;
+  document.body.appendChild(box);
+  const close = () => box.remove();
+  box.onclick = e => { if (e.target === box) close(); };
+  $('#cNo', box).onclick = close;
+  $('#cYes', box).onclick = () => { close(); onYes(); };
+  $('#cNo', box).focus();
+}
+let toastTimer;
+function toast(msg) {
+  let el = $('.toast');
+  if (!el) { el = document.createElement('div'); el.className = 'toast'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
+  el.textContent = msg; el.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.hidden = true, 1800);
+}
+// Garde l'écran allumé pendant la partie, quand le navigateur l'accepte.
+let wakeLock = null;
+async function keepAwake() {
+  try { if ('wakeLock' in navigator && S.partie && !wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => wakeLock = null); } } catch (_) {}
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') keepAwake(); });
+document.addEventListener('click', keepAwake, { once: true });
+
+// Réduit la police d'un nom jusqu'à ce qu'il tienne en entier.
+function ajusterNoms(root = document) {
+  root.querySelectorAll('.tot .nm, .pv .nm, th .nm').forEach(el => {
+    el.style.fontSize = '';
+    let size = parseFloat(getComputedStyle(el).fontSize);
+    while (el.scrollWidth > el.clientWidth + 0.5 && size > 9) { size -= 0.5; el.style.fontSize = size + 'px'; }
+  });
+}
+new MutationObserver(() => ajusterNoms()).observe(document.body, { childList: true, subtree: true });
+window.addEventListener('resize', () => ajusterNoms());
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => ajusterNoms());
+
+// Bouton retour du téléphone (appli Android) : ferme d'abord la fenêtre ouverte.
+window.retourAndroid = function () {
+  const m = document.querySelector('body > .modal');
+  if (m) { m.remove(); return true; }
+  if (layer.innerHTML) { layer.innerHTML = ''; document.body.style.overflow = ''; return true; }
+  return false;
+};
+
+render();
+</script>
+
+</body>
+</html>
