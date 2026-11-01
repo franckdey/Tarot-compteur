@@ -144,3 +144,28 @@ test('bouton retour Android : ferme la saisie, puis laisse quitter', async () =>
   assert.deepEqual(erreurs, []);
   await fermer();
 });
+
+test('mise à jour Android : proposée, puis reportée au lendemain si « Plus tard »', async () => {
+  const { page, erreurs, fermer } = await ouvrir();
+  // Sur le web (pas d'appli Android) : rien ne s'affiche.
+  await page.evaluate(() => window.majDisponible('2.5'));
+  assert.equal(await page.locator('body > .modal').count(), 0);
+
+  // Dans l'appli : la page propose d'installer et appelle CarnetAndroid.installer().
+  await page.evaluate(() => { window.installations = 0; window.CarnetAndroid = { installer: () => window.installations++ }; });
+  await page.evaluate(() => window.majDisponible('2.5'));
+  await page.getByRole('heading', { name: 'Nouvelle version 2.5' }).waitFor();
+  await page.getByRole('button', { name: 'Installer' }).click();
+  assert.equal(await page.evaluate(() => window.installations), 1);
+
+  // « Plus tard » : la même version n'est plus proposée tout de suite…
+  await page.evaluate(() => window.majDisponible('2.5'));
+  await page.getByRole('button', { name: 'Plus tard' }).click();
+  await page.evaluate(() => window.majDisponible('2.5'));
+  assert.equal(await page.locator('body > .modal').count(), 0);
+  // … mais une version encore plus récente, si.
+  await page.evaluate(() => window.majDisponible('2.6'));
+  assert.equal(await page.locator('body > .modal').count(), 1);
+  assert.deepEqual(erreurs, []);
+  await fermer();
+});

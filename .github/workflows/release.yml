@@ -1,0 +1,64 @@
+name: Release
+
+# À chaque fusion dans main qui touche l'appli : fabrique l'APK signé avec la vraie clé
+# et le publie dans la Release « latest ». Les téléphones y trouvent version.json
+# et proposent la mise à jour.
+on:
+  push:
+    branches: [main]
+    paths: ['web/**', 'android/**']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-24.04
+    env:
+      # numéro qui augmente à chaque publication (l'APK 1.1 du début avait le code 2)
+      VERSION_CODE: ${{ github.run_number }}0
+      VERSION_NAME: 2.${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Outils Android
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q aapt apksigner zipalign dalvik-exchange android-sdk-platform-23 openjdk-17-jdk-headless
+
+      - name: Clé de signature
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::Secret KEYSTORE_BASE64 manquant (Settings → Secrets and variables → Actions)"; exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/cle.jks"
+
+      - name: Fabriquer l'APK
+        env:
+          KS_PASS: ${{ secrets.KS_PASS }}
+        run: |
+          KEYSTORE="$RUNNER_TEMP/cle.jks" sh android/build.sh
+          cp android/out/carnet-tarot.apk .
+          printf '{"versionCode": %s, "versionName": "%s"}\n' "$VERSION_CODE" "$VERSION_NAME" > version.json
+          cat version.json
+          aapt dump badging carnet-tarot.apk | head -1
+          apksigner verify --print-certs carnet-tarot.apk | grep SHA-256
+
+      - name: Publier la Release « latest »
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest carnet-tarot.apk version.json \
+            --title "Carnet de tarot $VERSION_NAME" \
+            --notes "Version $VERSION_NAME, fabriquée automatiquement depuis ${GITHUB_SHA::7}.
+
+          Installer : ouvrez https://github.com/${{ github.repository }}/releases/latest/download/carnet-tarot.apk sur le téléphone. Les versions suivantes se proposent d'elles-mêmes dans l'appli."
