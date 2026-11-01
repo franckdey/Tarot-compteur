@@ -87,6 +87,16 @@ public class MiseAJour {
         }).start();
     }
 
+    /** Version installée, affichée par la page (accueil et menu de la partie). */
+    @JavascriptInterface
+    public String version() {
+        try {
+            return activite.getPackageManager().getPackageInfo(activite.getPackageName(), 0).versionName;
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
     private int versionInstallee() throws Exception {
         return activite.getPackageManager().getPackageInfo(activite.getPackageName(), 0).versionCode;
     }

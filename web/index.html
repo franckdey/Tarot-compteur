@@ -202,6 +202,10 @@ const fmt = v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v);
 const cls = v => v > 0 ? 'pos' : v < 0 ? 'neg' : '';
 const app = $('#app'), layer = $('#layer');
 
+// Version de l'appli Android installée (vide sur le web).
+function versionAppli() {
+  try { return window.CarnetAndroid && window.CarnetAndroid.version ? String(window.CarnetAndroid.version()) : ''; } catch (_) { return ''; }
+}
 function totaux(p) {
   const t = new Array(p.joueurs.length).fill(0);
   for (const d of p.donnes) calculerDonne(d, p.joueurs.length).scores.forEach((v, i) => t[i] += v);
@@ -271,6 +275,7 @@ function renderAccueil() {
       </section>
       ${renderArchives()}
       ${renderRegles()}
+      ${versionAppli() ? `<p class="small muted" style="text-align:center;margin:0">Version ${esc(versionAppli())}</p>` : ''}
     `;
     const e = $('#edit'); if (e) e.onclick = () => { edition = !edition; draw(); };
     app.querySelectorAll('[data-pick]').forEach(b => b.onclick = () => {
@@ -360,7 +365,7 @@ function menuPartie() {
   const p = S.partie;
   layer.innerHTML = `<div class="modal" id="m"><div class="box">
     <h2>Partie en cours</h2>
-    <p class="small muted" style="margin:0">${p.joueurs.map(esc).join(', ')} · ${p.donnes.length} donne${p.donnes.length > 1 ? 's' : ''}</p>
+    <p class="small muted" style="margin:0">${p.joueurs.map(esc).join(', ')} · ${p.donnes.length} donne${p.donnes.length > 1 ? 's' : ''}${versionAppli() ? ` · version ${esc(versionAppli())}` : ''}</p>
     <button type="button" class="primary" id="fin">Terminer et archiver la partie</button>
     <button type="button" class="danger" id="jeter">Effacer la partie sans l’archiver</button>
     <button type="button" id="close">Fermer</button>
