@@ -45,12 +45,14 @@ jobs:
         run: |
           keytool -genkeypair -keystore "$RUNNER_TEMP/ci.jks" -alias carnet -keyalg RSA -keysize 2048 \
             -validity 1 -storepass ci-test -dname CN=CI -noprompt
-          KEYSTORE="$RUNNER_TEMP/ci.jks" KS_PASS=ci-test sh android/build.sh
+          KEYSTORE="$RUNNER_TEMP/ci.jks" KS_PASS=ci-test VERSION_CODE=4321 VERSION_NAME=9.9 sh android/build.sh
 
       - name: Contrôler l'APK
         run: |
           apk=android/out/carnet-tarot.apk
-          aapt dump badging "$apk" | grep -q "package: name='fr.maxime.carnettarot'"
+          aapt dump badging "$apk" | grep -q "package: name='fr.maxime.carnettarot' versionCode='4321' versionName='9.9'"
+          aapt dump permissions "$apk" | grep -q REQUEST_INSTALL_PACKAGES
+          unzip -l "$apk" | grep -q 'classes.dex'
           unzip -l "$apk" | grep -q 'assets/index.html'
           unzip -l "$apk" | grep -q 'assets/fonts/'
           # la page embarquée ne doit plus appeler Google Fonts (appli hors ligne)

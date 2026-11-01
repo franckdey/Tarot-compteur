@@ -6,12 +6,17 @@ set -e
 cd "$(dirname "$0")"
 J=/usr/lib/android-sdk/platforms/android-23/android.jar
 KS=${KEYSTORE:-cle.jks}
+# VERSION_CODE / VERSION_NAME (facultatifs) remplacent ceux du manifeste : la Release GitHub les fixe.
+V=""
+[ -n "$VERSION_CODE" ] && V="$V --version-code $VERSION_CODE"
+[ -n "$VERSION_NAME" ] && V="$V --version-name $VERSION_NAME"
+[ -n "$V" ] && V="$V --replace-version"
 rm -rf gen classes out assets; mkdir -p gen classes out assets/fonts
 python3 prepare_assets.py
-aapt package -f -m -J gen -M AndroidManifest.xml -S res -I $J
-javac -nowarn --release 8 -classpath $J -d classes gen/fr/maxime/carnettarot/R.java src/fr/maxime/carnettarot/MainActivity.java
+aapt package -f -m -J gen -M AndroidManifest.xml -S res -I $J $V
+javac -nowarn --release 8 -classpath $J -d classes gen/fr/maxime/carnettarot/R.java src/fr/maxime/carnettarot/*.java
 dalvik-exchange --dex --output=out/classes.dex classes
-aapt package -f -M AndroidManifest.xml -S res -A assets -I $J -F out/unsigned.apk
+aapt package -f -M AndroidManifest.xml -S res -A assets -I $J $V -F out/unsigned.apk
 (cd out && aapt add unsigned.apk classes.dex >/dev/null && zipalign -f -p 4 unsigned.apk aligned.apk)
 apksigner sign --ks "$KS" ${KS_PASS:+--ks-pass env:KS_PASS} --ks-key-alias carnet --out out/carnet-tarot.apk out/aligned.apk
 echo "APK prêt : android/out/carnet-tarot.apk"

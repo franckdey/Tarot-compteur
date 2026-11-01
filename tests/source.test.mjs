@@ -29,3 +29,16 @@ test('manifeste Android : version et SDK', () => {
   assert.match(manifeste, /android:versionName="[^"]+"/);
   assert.match(manifeste, /android:minSdkVersion="23"/);
 });
+
+test('mise à jour intégrée : permissions et récepteur déclarés', () => {
+  assert.match(manifeste, /android\.permission\.INTERNET/);
+  assert.match(manifeste, /android\.permission\.REQUEST_INSTALL_PACKAGES/);
+  assert.match(manifeste, /<receiver android:name="\.InstallReceiver" android:exported="false"/);
+});
+
+test('mise à jour intégrée : l’adresse de la Release correspond au dépôt', () => {
+  const java = readFileSync(new URL('../android/src/fr/maxime/carnettarot/MiseAJour.java', import.meta.url), 'utf8');
+  assert.match(java, /"https:\/\/github\.com\/franckdey\/Tarot-compteur\/releases\/latest\/download\/"/);
+  const release = readFileSync(new URL('../.github/workflows/release.yml', import.meta.url), 'utf8');
+  assert.match(release, /gh release create latest carnet-tarot\.apk version\.json/);
+});

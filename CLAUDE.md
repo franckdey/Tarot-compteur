@@ -8,22 +8,23 @@ Feuille de marque pour des parties de tarot réelles entre amis (pas de jeu de c
 - `web/manifest.webmanifest`, `web/icon.svg` : pour l'ajout à l'écran d'accueil.
 - `android/` : enveloppe Android minimale (une `WebView` qui charge `file:///android_asset/index.html`).
   - `MainActivity.java` : stockage local activé, écran toujours allumé, bouton retour qui appelle `window.retourAndroid()` dans la page avant de quitter.
+  - `MiseAJour.java` et `InstallReceiver.java` : mise à jour intégrée. Au lancement, compare la version installée à `version.json` de la Release GitHub `latest` ; si elle est plus récente, appelle `window.majDisponible(version)` dans la page, qui propose d'installer avec `confirmer()` puis appelle `window.CarnetAndroid.installer()` (téléchargement de l'APK, installation via `PackageInstaller`, Android demande confirmation).
   - `prepare_assets.py` : copie `web/index.html` dans `android/assets/`, retire les liens Google Fonts et télécharge les polices en local pour que l'appli marche hors ligne.
   - `build.sh` : fabrique l'APK sans Gradle ni Android Studio (aapt, javac `--release 8`, dalvik-exchange, zipalign, apksigner, plateforme Android 23).
-- `apk/carnet-tarot.apk` : l'APK prêt à installer, à remplacer à chaque nouvelle version.
 
-## Fabriquer l'APK
+## Publier une version
 
-Paquets Ubuntu : `aapt apksigner zipalign dalvik-exchange android-sdk-platform-23` et un JDK 17 ou plus.
+Le workflow `.github/workflows/release.yml` s'en charge à chaque fusion dans `main` qui touche `web/` ou `android/` : il fabrique l'APK, le signe avec la vraie clé (secrets `KEYSTORE_BASE64` et `KS_PASS`) et remplace la Release `latest` (`carnet-tarot.apk` + `version.json`). Le numéro de version vient du numéro d'exécution du workflow (`versionCode` = numéro × 10, `versionName` = 2.numéro) : rien à changer à la main. Les téléphones proposent alors la mise à jour. Lien d'installation : `https://github.com/franckdey/Tarot-compteur/releases/latest/download/carnet-tarot.apk`. Ne pas committer d'APK dans le dépôt.
+
+Fabriquer l'APK à la main (paquets Ubuntu : `aapt apksigner zipalign dalvik-exchange android-sdk-platform-23` et un JDK 17 ou plus) :
 
 ```
 KEYSTORE=/chemin/vers/cle.jks KS_PASS=... sh android/build.sh
-cp android/out/carnet-tarot.apk apk/
 ```
 
-- La clé de signature (`cle.jks`, alias `carnet`) n'est **jamais** dans le dépôt (`*.jks` est ignoré). Il faut toujours signer avec la même clé, sinon l'appli ne s'installe pas par-dessus l'ancienne et les scores sont perdus.
-- Avant chaque nouvelle version, augmenter `android:versionCode` et `android:versionName` dans `android/AndroidManifest.xml`.
-- On compile contre l'API 23 avec `targetSdkVersion` 34 : pas d'API Android plus récente que la 23 dans le Java (par exemple `WebResourceRequest` n'existe pas, utiliser la variante avec `String url`).
+- La clé de signature (`cle.jks`, alias `carnet`, certificat « CN=Carnet de tarot ») n'est **jamais** dans le dépôt (`*.jks` est ignoré). Il faut toujours signer avec la même clé, sinon l'appli ne s'installe pas par-dessus l'ancienne et les scores sont perdus.
+- `VERSION_CODE` et `VERSION_NAME` (facultatifs) remplacent les valeurs du manifeste.
+- On compile contre l'API 23 avec `targetSdkVersion` 34 : pas d'API Android plus récente que la 23 dans le Java (par exemple `WebResourceRequest` n'existe pas, utiliser la variante avec `String url` ; `canRequestPackageInstalls()` est appelée par réflexion). Pas de lambdas : classes anonymes.
 
 ## Fonctionnement de la page
 

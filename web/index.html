@@ -541,15 +541,16 @@ function ouvrirSaisie(index) {
 }
 
 // ===== OUTILS =====
-function confirmer(titre, texte, action, onYes) {
+function confirmer(titre, texte, action, onYes, { non = 'Garder', onNo, style = 'danger' } = {}) {
   const box = document.createElement('div');
   box.className = 'modal';
   box.innerHTML = `<div class="box" role="alertdialog" aria-modal="true"><h2>${esc(titre)}</h2><p class="small muted" style="margin:0">${esc(texte)}</p>
-    <div class="row"><button type="button" id="cNo">Garder</button><button type="button" class="danger" id="cYes">${esc(action)}</button></div></div>`;
+    <div class="row"><button type="button" id="cNo">${esc(non)}</button><button type="button" class="${style}" id="cYes">${esc(action)}</button></div></div>`;
   document.body.appendChild(box);
   const close = () => box.remove();
-  box.onclick = e => { if (e.target === box) close(); };
-  $('#cNo', box).onclick = close;
+  const refuser = () => { close(); if (onNo) onNo(); };
+  box.onclick = e => { if (e.target === box) refuser(); };
+  $('#cNo', box).onclick = refuser;
   $('#cYes', box).onclick = () => { close(); onYes(); };
   $('#cNo', box).focus();
 }
@@ -579,6 +580,20 @@ function ajusterNoms(root = document) {
 new MutationObserver(() => ajusterNoms()).observe(document.body, { childList: true, subtree: true });
 window.addEventListener('resize', () => ajusterNoms());
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => ajusterNoms());
+
+// Appli Android : MainActivity appelle majDisponible() quand une version plus récente est publiée
+// sur GitHub. « Plus tard » reporte la question au lendemain.
+const KEY_MAJ = 'tarotCompteur.majReportee';
+window.majDisponible = function (version) {
+  if (!window.CarnetAndroid) return;
+  try {
+    const r = JSON.parse(localStorage.getItem(KEY_MAJ));
+    if (r && r.version === version && Date.now() - r.quand < 20 * 3600e3) return;
+  } catch (_) {}
+  confirmer(`Nouvelle version ${version}`, 'Une mise à jour du carnet est disponible. Les scores et les parties sont conservés.', 'Installer',
+    () => window.CarnetAndroid.installer(),
+    { non: 'Plus tard', style: 'primary', onNo: () => { try { localStorage.setItem(KEY_MAJ, JSON.stringify({ version, quand: Date.now() })); } catch (_) {} } });
+};
 
 // Bouton retour du téléphone (appli Android) : ferme d'abord la fenêtre ouverte.
 window.retourAndroid = function () {

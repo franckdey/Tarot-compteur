@@ -12,6 +12,8 @@ import android.webkit.WebViewClient;
 
 public class MainActivity extends Activity {
     private WebView web;
+    private MiseAJour maj;
+    private boolean majVerifiee = false;
 
     @Override
     protected void onCreate(Bundle state) {
@@ -25,7 +27,15 @@ public class MainActivity extends Activity {
         s.setDomStorageEnabled(true);
         s.setAllowFileAccess(true);
         s.setTextZoom(100);
+        maj = new MiseAJour(this, web);
+        web.addJavascriptInterface(maj, "CarnetAndroid");
         web.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView v, String url) {
+                // Une fois par lancement : une nouvelle version est-elle publiée sur GitHub ?
+                if (!majVerifiee) { majVerifiee = true; maj.verifier(); }
+            }
+
             @Override
             public boolean shouldOverrideUrlLoading(WebView v, String url) {
                 Uri u = Uri.parse(url);
